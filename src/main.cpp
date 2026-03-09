@@ -21,4 +21,5 @@ void decomp_test() {
 
 int main() {
     decomp_test();
+    return 0;
 }
