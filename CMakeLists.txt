@@ -16,14 +16,18 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+add_library(lower_upper_lib src/lower_upper.cpp)
+target_include_directories(lower_upper_lib PUBLIC include)
+
 add_executable(
-  hello_test
-  src/hello_test.cpp
+  decomp_tests
+  tests/decomp_tests.cpp
 )
 target_link_libraries(
-  hello_test
+  decomp_tests
+  lower_upper_lib
   GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(hello_test)
+gtest_discover_tests(decomp_tests)
