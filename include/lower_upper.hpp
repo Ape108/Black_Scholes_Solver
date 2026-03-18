@@ -43,9 +43,9 @@ struct Decomposed {
 };
 
 /// @brief Performs LU decomposition on a tridiagonal matrix.
-/// @param a Flattened input matrix main-diagonal values
-/// @param b Flattened input matrix upper-diagonal values
-/// @param c Flattened input matrix lower-diagonal values
-/// @return A 'Decomposed' struct containing an upper and lower matrix
+/// @param a The input matrix main-diagonal values (Flattened into a 1D vector).
+/// @param b The input matrix upper-diagonal values (Flattened into a 1D vector).
+/// @param c The input matrix lower-diagonal values (Flattened into a 1D vector).
+/// @return A 'Decomposed' struct containing an upper and lower matrix.
 Decomposed lu_decomposition(const std::vector<float>& a, const std::vector<float>& b, const std::vector<float>& c);
 
