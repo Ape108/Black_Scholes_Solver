@@ -4,9 +4,9 @@ Decomposed lu_decomposition(const std::vector<float>& a, const std::vector<float
     
     Decomposed LU;
     LU.upper.push_back(a[0]);
-    std::size_t n = a.size();
+    size_t n = a.size();
 
-    for (std::size_t i=1; i<n; i++) {
+    for (size_t i=1; i<n; i++) {
         float l_i = c[i-1] / LU.upper[i-1];
         LU.lower.push_back(l_i);
         float u_i = a[i] - (l_i * b[i-1]);
