@@ -7,12 +7,11 @@ std::vector<float> backward_substitution(const std::vector<float>& u, const std:
     size_t n = u.size();
     std::stack<float> x;
 
-    x.push(y[n] / u[n]);
+    x.push(y[n-1] / u[n-1]);
     
-    // i-- > 0 avoids size_t becoming negative, ex: (size_t i=n-1; i >= 0; i--)
-    for (size_t i = n; i-- > 0;) {
-        float x_i = y[i] - (b[i+1] * y[i+1]);
-        x_i = x_i / u[i];
+    for (size_t i = n-1; i > 0; i--) {
+        float x_i = y[i-1] - (b[i-1] * x.top());
+        x_i /= u[i-1];
         x.push(x_i);
     }
 
