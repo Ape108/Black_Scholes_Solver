@@ -3,6 +3,7 @@
 #include "../include/back_sub.hpp"
 
 #include <iostream>
+#include <iomanip>
 
 
 int main() {
@@ -13,17 +14,17 @@ int main() {
     std::vector<float> c = {2, 3};
     
     // Right-hand side
-    std::vector<float> b = {6.0, 9.0, 6.0};
+    std::vector<float> rhs = {6.0, 9.0, 6.0};
 
     Decomposed LU = lu_decomposition(a, b, c);
 
     std::vector<float> l = LU.lower;
-    std::vector<float> y = forward_substitution(l, b);
+    std::vector<float> y = forward_substitution(l, rhs);
 
     std::vector<float> u = LU.upper;
     std::vector<float> x = backward_substitution(u, b, y);
 
-    std::cout << x[0] << " " << x[1] << " " << x[2] << std::endl;
+    std::cout << std::fixed << std::setprecision(2) << x[0] << " " << x[1] << " " << x[2] << std::endl;
 
     return 0;
 }

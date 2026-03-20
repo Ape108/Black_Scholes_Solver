@@ -20,6 +20,10 @@ enable_testing()
 add_library(solver_lib src/lower_upper.cpp src/forward_sub.cpp src/back_sub.cpp)
 target_include_directories(solver_lib PUBLIC include)
 
+# Create executable for main.cpp
+add_executable(solver src/main.cpp)
+target_link_libraries(solver solver_lib)
+
 # Create a single unified test executable with all test files
 add_executable(
   all_tests
