@@ -43,3 +43,4 @@
 .vscode
 
 build_dir
+.venv
