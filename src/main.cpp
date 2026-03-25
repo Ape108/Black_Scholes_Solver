@@ -47,12 +47,13 @@ int main() {
         return 1;
     }
 
-    std::cout << std::endl;
     std::map<std::string, std::string> params = data_loader(file, true);
-    std::cout << std::endl;
 
     file.close();
 
+    // Pass parameters to initialize tridiagonal Black-Scholes system.
+
+    // Sample values
     // A = [1 1 0]
     //     [2 7 8]
     //     [0 3 5]

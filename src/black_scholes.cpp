@@ -1,7 +1,7 @@
 #include "black_scholes.hpp"
 #include <stdexcept>
 
-std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& print=false) {
+std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& print) {
     
     std::string line;
     std::vector<std::vector<std::string>> rows;
@@ -27,19 +27,19 @@ std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& 
         throw std::runtime_error("CSV data_loader: data row has fewer columns than header");
     }
 
-    std::map<std::string, std::string> params;
-
     if (print) {
-        for (size_t i=0; i<header.size(); i++) {
-            params[header[i]] = values[i];
-            std::cout << header[i] << ":  " << values[i] << std::endl;
+        std::cout << std::endl;
+        // Print the parsed data
+        for (size_t i = 0; i < header.size(); ++i) {
+            std::cout << header[i] << ": " << values[i] << std::endl;
         }
-    } else {
-        for (size_t i=0; i<header.size(); i++) {
-            params[header[i]] = values[i];
-        }
+        std::cout << std::endl;
     }
-    
+
+    std::map<std::string, std::string> params;
+    for (size_t i=0; i<header.size(); i++) {
+        params[header[i]] = values[i];
+    }
 
     return params;
 }
