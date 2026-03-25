@@ -1,2 +1,2 @@
-,current_price,strike_price,T,implied_vol,risk_free_rate
-NVDA,175.64,175.0,0.0055,0.4055,0.0361
+ticker,current_price,strike_price,T,implied_vol,risk_free_rate
+NVDA,178.18,177.5,0.0027,0.3721,0.0362

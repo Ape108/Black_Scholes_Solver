@@ -34,7 +34,7 @@ print(f"--- Extracted Parameters ---")
 print(f"S0 (Price): ${current_price:.2f} | K (Strike): ${strike_price} | T (Years): {T:.4f}")
 print(f"Vol (sigma): {implied_vol:.4f} | Risk-Free Rate (r): {risk_free_rate:.4f}\n")
 
-series = pd.DataFrame(data={"current_price":current_price, "strike_price":strike_price,
-                             "T":T, "implied_vol":implied_vol, "risk_free_rate":risk_free_rate}, index=[target_stock])
+df = pd.DataFrame(data={"ticker":[target_stock], "current_price":[current_price], "strike_price":[strike_price],
+                             "T":[T], "implied_vol":[implied_vol], "risk_free_rate":[risk_free_rate]})
 
-series.to_csv('option_chain.csv')
+df.to_csv('option_chain.csv', index=False)
