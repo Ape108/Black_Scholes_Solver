@@ -21,6 +21,24 @@
 ///         has fewer columns than the header row.
 std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& print=false);
 
+struct Coefficients {
+    float alpha;
+    float beta;
+    float gamma;
+};
+
+Coefficients calculate_coeffs(const float& vol, const float& r, const float& time_to_maturity, const size_t& time_steps, const size_t& i);
+
+
+std::vector<float> evaluate_rhs(
+    const std::vector<float>& V_known, // Current known prices (size M + 1)
+    const std::vector<float>& alpha,   // Pre-calculated coefficients
+    const std::vector<float>& beta,
+    const std::vector<float>& gamma,
+    float V_bound_lower_j, float V_bound_lower_j_plus_1,
+    float V_bound_upper_j, float V_bound_upper_j_plus_1);
+
+
 struct GridParams {
     float price_ceiling; // Max price to model (theoretical price --> infinity, ceiling for computation)
     float time_to_maturity;
@@ -35,22 +53,5 @@ struct MarketParams {
     float strike_price;
 };
 
-struct Coefficients {
-    float alpha;
-    float beta;
-    float gamma;
-};
-
-
-
-Coefficients calculate_coeffs(const float& vol, const float& r, const float& time_to_maturity, const size_t& time_steps, const size_t& i);
-
-std::vector<float> evaluate_rhs(
-    const std::vector<float>& V_known, // Current known prices (size M + 1)
-    const std::vector<float>& alpha,   // Pre-calculated coefficients
-    const std::vector<float>& beta,
-    const std::vector<float>& gamma,
-    float V_bound_lower_j, float V_bound_lower_j_plus_1,
-    float V_bound_upper_j, float V_bound_upper_j_plus_1);
 
 std::vector<float> formulate_black_scholes(const GridParams& grid, const MarketParams& market);

@@ -51,18 +51,41 @@ int main() {
 
     file.close();
 
+    GridParams grid; 
+    MarketParams market;
+
+    grid.num_price_steps = 760;
+    grid.num_time_steps = 200; 
+    grid.price_ceiling = std::stof(params["strike_price"]) * 2.0;
+    grid.time_to_maturity = std::stof(params["T"]);
+
+    std::cout << "Loaded Grid Parameters!" << std::endl;
+
+    market.risk_free_interest = std::stof(params["risk_free_rate"]);
+    market.strike_price = std::stof(params["strike_price"]);
+    market.volatility = std::stof(params["implied_vol"]);
+
+    std::cout << "Loaded Market Parameters!" << std::endl;
+
+    std::vector<float> V = formulate_black_scholes(grid, market);
+
+    std::cout << "System solved!" << std::endl;
+
+    print_vector(V);
+    
+
     // Pass parameters to initialize tridiagonal Black-Scholes system.
 
     // Sample values
     // A = [1 1 0] b = [6]
     //     [2 7 8]     [9]
     //     [0 3 5]     [6]
-    TridiagonalMatrix A{{1, 7, 5}, {1, 8}, {2, 3}};
+    // TridiagonalMatrix A{{1, 7, 5}, {1, 8}, {2, 3}};
     // Right-hand side
-    std::vector<float> rhs = {6.0, 9.0, 6.0}; 
+    // std::vector<float> rhs = {6.0, 9.0, 6.0}; 
     // Solution Vector
-    std::vector<float> x = thomas_algorithm(A, rhs); 
-    print_vector(x);
+    // std::vector<float> x = thomas_algorithm(A, rhs); 
+    // print_vector(x);
 
     return 0;
 }
