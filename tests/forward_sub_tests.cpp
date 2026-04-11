@@ -1,4 +1,4 @@
-#include "../include/forward_sub.hpp"
+#include "linear_algebra.hpp"
 
 #include <iostream>
 #include <gtest/gtest.h>

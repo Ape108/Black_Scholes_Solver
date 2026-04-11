@@ -1,7 +1,6 @@
 #include "black_scholes.hpp"
-#include "lower_upper.hpp"
-#include "forward_sub.hpp"
-#include "back_sub.hpp"
+#include "linear_algebra.hpp"
+
 
 std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& print) {
     
@@ -46,7 +45,68 @@ std::map<std::string, std::string> data_loader(std::ifstream &file, const bool& 
     return params;
 }
 
-Coefficients calculate_coeffs(const float& vol, const float& r, const float& time_to_maturity, const size_t& time_steps, const size_t& i) {
+std::map<std::string, std::string> open_file(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Error opening file:" + filename);
+    }
+
+    // Load option data from file into config
+    std::map<std::string, std::string> params = data_loader(file, true);
+
+    file.close();
+    return params;
+};
+
+
+
+float price_option(
+    std::vector<float>& V, 
+    const size_t& num_price_steps,
+    std::map<std::string, std::string>& params
+) {
+
+    float current_price = std::stof(params["current_price"]);
+    // Extracting the specific option price
+    float price_ceiling = std::stof(params["strike_price"]) * 2.0;
+    
+    float delta_S = price_ceiling / num_price_steps;
+
+    // Find where our current price lands on the grid
+    float exact_idx = current_price / delta_S;
+
+    // Get the integer indices immediately below and above it
+    size_t lower_idx = static_cast<size_t>(std::floor(exact_idx));
+    size_t upper_idx = lower_idx + 1;
+
+    // Calculate how close the price is to the upper node (weighting)
+    float weight_upper = exact_idx - lower_idx;
+    float weight_lower = 1.0f - weight_upper;
+
+    // Interpolate the exact option price
+    float option_price = (V[lower_idx] * weight_lower) + (V[upper_idx] * weight_upper);
+    
+    return option_price;
+}
+
+void print_option_diff(const float& option_price, std::map<std::string, std::string>& params) {
+    float actual_price = stof(params["actual_price"]);
+    float underlier_price = std::stof(params["current_price"]);
+
+    std::cout << "\n=========================================" << std::endl;
+    std::cout << " Underlier Price:   $" << underlier_price << std::endl;
+    std::cout << " Calculated Option: $" << std::fixed << std::setprecision(4) << option_price << std::endl;
+    std::cout << " Actual Option: $" << std::fixed << std::setprecision(4) << actual_price << std::endl;
+    std::cout << "=========================================\n" << std::endl;
+}
+
+Coefficients calculate_coeffs(
+    const float& vol, 
+    const float& r, 
+    const float& time_to_maturity, 
+    const size_t& time_steps, 
+    const size_t& i
+) {
     Coefficients coeffs;
     float delta_t = time_to_maturity / time_steps;
 
@@ -95,7 +155,7 @@ std::vector<float> formulate_black_scholes(const GridParams& grid, const MarketP
     std::vector<float> beta(M + 1, 0.0f);
     std::vector<float> gamma(M + 1, 0.0f);
 
-    for (size_t i = 0; i <= M - 1; ++i) {
+    for (size_t i = 0; i <= M; ++i) {
         Coefficients c = calculate_coeffs(market.volatility, market.risk_free_interest, grid.time_to_maturity, N, i);
         alpha[i] = c.alpha;
         beta[i] = c.beta;
@@ -107,11 +167,11 @@ std::vector<float> formulate_black_scholes(const GridParams& grid, const MarketP
     std::vector<float> b_diag(M - 2); // Upper diagonal: -gamma_i
     std::vector<float> c_diag(M - 2); // Lower diagonal: -alpha_i
 
-    for (size_t i=0; i <= M - 1; ++i) {
+    for (size_t i = 1; i <= M - 1; ++i) {
         a_diag[i - 1] = 1.0f - beta[i];
         if (i < M - 1) b_diag[i - 1] = -gamma[i];
         if (i > 1)     c_diag[i - 2] = -alpha[i];
-    }
+    } 
 
     // 3. Decompose Matrix A only once
     Decomposed LU = lu_decomposition(a_diag, b_diag, c_diag);
@@ -154,4 +214,26 @@ std::vector<float> formulate_black_scholes(const GridParams& grid, const MarketP
     }
     
     return V; // This vector contains the present value of the option across all price steps.
+}
+
+std::vector<float> evaluate_system(
+    const size_t& num_time_steps, 
+    const size_t& num_price_steps, 
+    std::map<std::string, std::string>& params
+) {
+    GridParams grid; 
+    MarketParams market;
+
+    grid.num_price_steps = num_price_steps;
+    grid.num_time_steps = num_time_steps; 
+    grid.price_ceiling = std::stof(params["strike_price"]) * 2.0;
+    grid.time_to_maturity = std::stof(params["T"]);
+
+    market.risk_free_interest = std::stof(params["risk_free_rate"]);
+    market.strike_price = std::stof(params["strike_price"]);
+    market.volatility = std::stof(params["implied_vol"]);
+
+    std::vector<float> V = formulate_black_scholes(grid, market);
+
+    return V;
 }

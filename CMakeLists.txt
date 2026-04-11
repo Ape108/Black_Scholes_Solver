@@ -17,7 +17,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Create a library with all source files
-add_library(solver_lib src/lower_upper.cpp src/forward_sub.cpp src/back_sub.cpp src/black_scholes.cpp)
+add_library(solver_lib src/linear_algebra.cpp src/black_scholes.cpp)
 target_include_directories(solver_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 # Create executable for main.cpp

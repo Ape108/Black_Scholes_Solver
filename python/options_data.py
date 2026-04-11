@@ -24,6 +24,17 @@ target_call = calls.iloc[(calls['strike'] - current_price).abs().argsort()[:1]].
 strike_price = round(target_call['strike'], 2)
 implied_vol = round(target_call['impliedVolatility'], 4)
 
+# Grab the bid and ask instead of the lastPrice
+bid = round(target_call['bid'], 4)
+ask = round(target_call['ask'], 4)
+
+# Calculate the true market consensus (Mid-Price)
+actual_price = round((bid + ask) / 2.0, 4)
+
+print(f"Market Bid: ${bid:.2f} | Market Ask: ${ask:.2f}")
+print(f"True Market Mid-Price: ${actual_price:.4f}\n")
+
+
 # Calculate time to maturity (T) in years
 expiry_date = datetime.strptime(target_expiry, '%Y-%m-%d').replace(tzinfo=timezone.utc)
 today = datetime.now(timezone.utc)
@@ -34,7 +45,14 @@ print(f"--- Extracted Parameters ---")
 print(f"S0 (Price): ${current_price:.2f} | K (Strike): ${strike_price} | T (Years): {T:.4f}")
 print(f"Vol (sigma): {implied_vol:.4f} | Risk-Free Rate (r): {risk_free_rate:.4f}\n")
 
-df = pd.DataFrame(data={"ticker":[target_stock], "current_price":[current_price], "strike_price":[strike_price],
-                             "T":[T], "implied_vol":[implied_vol], "risk_free_rate":[risk_free_rate]})
+df = pd.DataFrame(data={
+    "ticker":[target_stock], 
+    "current_price":[current_price], 
+    "strike_price":[strike_price],
+    "T":[T], 
+    "implied_vol":[implied_vol], 
+    "risk_free_rate":[risk_free_rate],
+    "actual_price":[actual_price]
+})
 
 df.to_csv('option_chain.csv', index=False)
