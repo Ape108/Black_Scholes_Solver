@@ -4,12 +4,12 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(bs_solver, m) {
+PYBIND11_MODULE(black_scholes_solver, m) {
     m.doc() = "C++ Black-Scholes Finite Difference Solver";
 
     // Expose the GridParams Struct to python
     py::class_<GridParams>(m, "GridParams")
-        .def(py::init<>()) // Allow instantiation in python: grid = bs_solver.GridParams()
+        .def(py::init<>()) // Allow instantiation in python: grid = black_scholes_solver.GridParams()
         .def_readwrite("price_ceiling", &GridParams::price_ceiling)
         .def_readwrite("time_to_maturity", &GridParams::time_to_maturity)
         .def_readwrite("num_price_steps", &GridParams::num_price_steps)

@@ -20,11 +20,6 @@ enable_testing()
 add_library(solver_lib src/linear_algebra.cpp src/black_scholes.cpp)
 target_include_directories(solver_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-# Create executable for main.cpp
-add_executable(solver src/main.cpp)
-target_link_libraries(solver solver_lib)
-# optional: ensure include dir if other targets don't transitively see it
-target_include_directories(solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Create a single unified test executable with all test files
 add_executable(
