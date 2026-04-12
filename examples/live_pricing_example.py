@@ -1,7 +1,7 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timezone
-import bs_solver # My Compiled C++ Library 
+import black_scholes_solver # My Compiled C++ Library 
 
 def main():
     start_time = datetime.now()
@@ -55,20 +55,20 @@ def main():
 
     start_time = datetime.now()
     # 1. Instantiate the C++ structs directly in Python
-    grid = bs_solver.GridParams()
+    grid = black_scholes_solver.GridParams()
     grid.price_ceiling = strike_price * 2.0
     grid.time_to_maturity = T
     grid.num_price_steps = 760
     grid.num_time_steps = 200
 
-    market = bs_solver.MarketParams()
+    market = black_scholes_solver.MarketParams()
     market.volatility = implied_vol
     market.risk_free_interest = risk_free_rate
     market.strike_price = strike_price
 
     # 2. Call the C++ engine (Executes in compiled C++ speed)
     # pybind11 automatically converts the returned std::vector<float> into a Python list
-    V = bs_solver.formulate_black_scholes(grid, market)
+    V = black_scholes_solver.formulate_black_scholes(grid, market)
 
     # 3. Interpolate the exact price using Python
     delta_S = grid.price_ceiling / grid.num_price_steps

@@ -51,19 +51,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-# Tell pybind11 to build a Python extension module named 'bs_solver'
+# Tell pybind11 to build a Python extension module named 'black_scholes_solver'
 # We include the binding file AND the core library files it depends on
-pybind11_add_module(bs_solver 
+pybind11_add_module(black_scholes_solver 
     src/bindings.cpp 
     src/linear_algebra.cpp 
     src/black_scholes.cpp
 )
 
 # Install the compiled C++ library 
-install(TARGETS bs_solver DESTINATION .)
+install(TARGETS black_scholes_solver DESTINATION .)
 
 # Install the Python type hints stub file alongside it
-install(FILES src/bs_solver.pyi DESTINATION .)
+install(FILES src/black_scholes_solver.pyi DESTINATION .)
 
 # Ensure the module can find your headers
-target_include_directories(bs_solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(black_scholes_solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
