@@ -8,9 +8,14 @@ version = "0.1.0"
 description = "A high-performance Black-Scholes PDE solver using Crank-Nicolson"
 readme = "README.md"
 requires-python = ">=3.8"
+license = {file = "LICENSE"} # Automatically links your MIT license
 authors = [
     { name = "Cameron Akhtar" }
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/YourUsername/BlackScholesSolver"
+"Bug Tracker" = "https://github.com/YourUsername/BlackScholesSolver/issues"
 
 [tool.scikit-build]
 # This tells the build system we are using CMake and generating a wheel
