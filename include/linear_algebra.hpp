@@ -57,6 +57,9 @@ x will be the solution vector to the original tridiagonal linear system.
 
 #include <vector>
 #include <stack>
+#include <stdexcept>
+#include <string>
+#include <cmath>
 
 // Struct to hold the values of L and U. 
 struct Decomposed {

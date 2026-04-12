@@ -4,6 +4,10 @@
 
 std::map<std::string, std::string> data_loader(std::ifstream &file, bool print) {
     
+    if (!file.is_open()) {
+        throw std::runtime_error("CSV data_loader: input file stream is not open");
+    }
+    
     std::string line;
     std::vector<std::vector<std::string>> rows;
 
@@ -15,17 +19,25 @@ std::map<std::string, std::string> data_loader(std::ifstream &file, bool print) 
         while (std::getline(ss, cell, ',')) {
             row.push_back(cell);
         }
-        rows.push_back(row);
+        
+        if (!row.empty()) {  // Skip empty lines
+            rows.push_back(row);
+        }
     }
 
     if (rows.size() < 2) {
-        throw std::runtime_error("CSV data_loader: file must contain at least header and one data row");
+        throw std::runtime_error("CSV data_loader: file must contain at least a header row and one data row, got " + std::to_string(rows.size()) + " row(s)");
     }
 
     const auto &header = rows[0];
     const auto &values = rows[1];
+    
+    if (header.empty()) {
+        throw std::runtime_error("CSV data_loader: header row is empty");
+    }
+    
     if (values.size() < header.size()) {
-        throw std::runtime_error("CSV data_loader: data row has fewer columns than header");
+        throw std::runtime_error("CSV data_loader: data row has " + std::to_string(values.size()) + " columns but header has " + std::to_string(header.size()) + " columns");
     }
 
     if (print) {
@@ -66,9 +78,26 @@ double price_option(
     const std::map<std::string, std::string>& params
 ) {
 
+    if (V.empty()) {
+        throw std::invalid_argument("price_option: solution vector V cannot be empty");
+    }
+    
+    if (num_price_steps == 0) {
+        throw std::invalid_argument("price_option: num_price_steps must be greater than 0");
+    }
+    
+    if (V.size() != num_price_steps + 1) {
+        throw std::invalid_argument("price_option: solution vector size (" + std::to_string(V.size()) + 
+                                   ") must equal num_price_steps + 1 (" + std::to_string(num_price_steps + 1) + ")");
+    }
+
     double current_price = std::stod(params.at("current_price"));
     // Extracting the specific option price
     double price_ceiling = std::stod(params.at("strike_price")) * 2.0;
+    
+    if (price_ceiling <= 0.0) {
+        throw std::invalid_argument("price_option: price ceiling must be positive");
+    }
     
     double delta_S = price_ceiling / num_price_steps;
 
@@ -78,6 +107,12 @@ double price_option(
     // Get the integer indices immediately below and above it
     size_t lower_idx = static_cast<size_t>(std::floor(exact_idx));
     size_t upper_idx = lower_idx + 1;
+    
+    // Validate array bounds
+    if (upper_idx >= V.size()) {
+        throw std::runtime_error("price_option: calculated index " + std::to_string(upper_idx) + 
+                                " exceeds solution vector size " + std::to_string(V.size()));
+    }
 
     // Calculate how close the price is to the upper node (weighting)
     double weight_upper = exact_idx - lower_idx;
@@ -147,6 +182,31 @@ std::vector<double> evaluate_rhs(
 }
 
 std::vector<double> formulate_black_scholes(const GridParams& grid, const MarketParams& market) {
+    
+    if (grid.num_price_steps == 0) {
+        throw std::invalid_argument("formulate_black_scholes: num_price_steps must be greater than 0");
+    }
+    
+    if (grid.num_time_steps == 0) {
+        throw std::invalid_argument("formulate_black_scholes: num_time_steps must be greater than 0");
+    }
+    
+    if (grid.price_ceiling <= 0.0) {
+        throw std::invalid_argument("formulate_black_scholes: price_ceiling must be positive");
+    }
+    
+    if (grid.time_to_maturity <= 0.0) {
+        throw std::invalid_argument("formulate_black_scholes: time_to_maturity must be positive");
+    }
+    
+    if (market.volatility < 0.0) {
+        throw std::invalid_argument("formulate_black_scholes: volatility cannot be negative");
+    }
+    
+    if (market.strike_price <= 0.0) {
+        throw std::invalid_argument("formulate_black_scholes: strike_price must be positive");
+    }
+    
     size_t M = grid.num_price_steps;
     size_t N = grid.num_time_steps;
 
@@ -221,17 +281,32 @@ std::vector<double> evaluate_system(
     const size_t& num_price_steps, 
     const std::map<std::string, std::string>& params
 ) {
+    
+    if (num_time_steps == 0) {
+        throw std::invalid_argument("evaluate_system: num_time_steps must be greater than 0");
+    }
+    
+    if (num_price_steps == 0) {
+        throw std::invalid_argument("evaluate_system: num_price_steps must be greater than 0");
+    }
+    
     GridParams grid; 
     MarketParams market;
 
     grid.num_price_steps = num_price_steps;
-    grid.num_time_steps = num_time_steps; 
-    grid.price_ceiling = std::stod(params.at("strike_price")) * 2.0;
-    grid.time_to_maturity = std::stod(params.at("T"));
-
-    market.risk_free_interest = std::stod(params.at("risk_free_rate"));
-    market.strike_price = std::stod(params.at("strike_price"));
-    market.volatility = std::stod(params.at("implied_vol"));
+    grid.num_time_steps = num_time_steps;
+    
+    try {
+        grid.price_ceiling = std::stod(params.at("strike_price")) * 2.0;
+        grid.time_to_maturity = std::stod(params.at("T"));
+        market.risk_free_interest = std::stod(params.at("risk_free_rate"));
+        market.strike_price = std::stod(params.at("strike_price"));
+        market.volatility = std::stod(params.at("implied_vol"));
+    } catch (const std::out_of_range& e) {
+        throw std::runtime_error("evaluate_system: required parameter missing from CSV: " + std::string(e.what()));
+    } catch (const std::invalid_argument& e) {
+        throw std::runtime_error("evaluate_system: invalid numeric value in CSV: " + std::string(e.what()));
+    }
 
     std::vector<double> V = formulate_black_scholes(grid, market);
 

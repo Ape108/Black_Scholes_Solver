@@ -2,12 +2,29 @@
 
 Decomposed lu_decomposition(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c) {
     
+    if (a.empty()) {
+        throw std::invalid_argument("LU decomposition: main diagonal vector 'a' cannot be empty");
+    }
+    
+    size_t n = a.size();
+    if (b.size() != n - 1 || c.size() != n - 1) {
+        throw std::invalid_argument("LU decomposition: upper diagonal 'b' and lower diagonal 'c' must have size n-1");
+    }
+    
+    if (std::abs(a[0]) < 1e-15) {
+        throw std::runtime_error("LU decomposition: first pivot element is zero or near-zero, matrix is singular");
+    }
+    
     Decomposed LU;
     LU.upper.push_back(a[0]);
-    size_t n = a.size();
 
     for (size_t i=1; i<n; i++) {
-        double l_i = c[i-1] / LU.upper[i-1];
+        double denominator = LU.upper[i-1];
+        if (std::abs(denominator) < 1e-15) {
+            throw std::runtime_error("LU decomposition: pivot became zero or near-zero at iteration " + std::to_string(i) + ", matrix is singular");
+        }
+        
+        double l_i = c[i-1] / denominator;
         LU.lower.push_back(l_i);
         double u_i = a[i] - (l_i * b[i-1]);
         LU.upper.push_back(u_i); 
@@ -18,10 +35,22 @@ Decomposed lu_decomposition(const std::vector<double>& a, const std::vector<doub
 
 std::vector<double> forward_substitution(const std::vector<double>& lower, const std::vector<double>& b) {
     
-    std::vector<double> y = {b[0]};
+    if (b.empty()) {
+        throw std::invalid_argument("Forward substitution: RHS vector 'b' cannot be empty");
+    }
+    
+    if (lower.size() != b.size() - 1) {
+        throw std::invalid_argument("Forward substitution: lower diagonal must have size equal to b.size() - 1");
+    }
+    
+    std::vector<double> y;
+    y.push_back(b[0]);
     size_t n = lower.size();
     
     for (size_t i=1; i<=n; i++) {
+        if (i >= b.size()) {
+            throw std::runtime_error("Forward substitution: index out of bounds at iteration " + std::to_string(i));
+        }
         double y_i = b[i] - (lower[i-1] * y[i-1]);
         y.push_back(y_i);
     }
@@ -31,12 +60,36 @@ std::vector<double> forward_substitution(const std::vector<double>& lower, const
 
 std::vector<double> backward_substitution(const std::vector<double>& u, const std::vector<double>& b, const std::vector<double>& y) {
 
+    if (u.empty() || y.empty()) {
+        throw std::invalid_argument("Backward substitution: upper diagonal 'u' and RHS 'y' cannot be empty");
+    }
+    
+    if (b.size() != u.size() - 1) {
+        throw std::invalid_argument("Backward substitution: upper diagonal 'b' must have size equal to u.size() - 1");
+    }
+    
+    if (y.size() != u.size()) {
+        throw std::invalid_argument("Backward substitution: RHS 'y' size must match upper diagonal 'u' size");
+    }
+    
     size_t n = u.size();
+    
+    if (std::abs(u[n-1]) < 1e-15) {
+        throw std::runtime_error("Backward substitution: pivot element u[" + std::to_string(n-1) + "] is zero or near-zero");
+    }
+    
     std::stack<double> x;
-
     x.push(y[n-1] / u[n-1]);
     
     for (size_t i = n-1; i > 0; i--) {
+        if (i-1 >= b.size()) {
+            throw std::runtime_error("Backward substitution: index out of bounds in upper diagonal at iteration " + std::to_string(i));
+        }
+        
+        if (std::abs(u[i-1]) < 1e-15) {
+            throw std::runtime_error("Backward substitution: pivot element u[" + std::to_string(i-1) + "] is zero or near-zero");
+        }
+        
         double x_i = y[i-1] - (b[i-1] * x.top());
         x_i /= u[i-1];
         x.push(x_i);
