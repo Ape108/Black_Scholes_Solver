@@ -17,24 +17,24 @@ pip install .
 Once installed, you can import the compiled C++ engine directly into any Python script.
 
 ```python
-import bs_solver
+import black_scholes_solver
 
 # 1. Define the grid parameters
-grid = bs_solver.GridParams()
+grid = black_scholes_solver.GridParams()
 grid.price_ceiling = 380.0
 grid.time_to_maturity = 0.0082
 grid.num_price_steps = 760
 grid.num_time_steps = 200
 
 # 2. Define the market parameters
-market = bs_solver.MarketParams()
+market = black_scholes_solver.MarketParams()
 market.volatility = 0.2754
 market.risk_free_interest = 0.0359
 market.strike_price = 190.0
 
 # 3. Solve the PDE (Executes natively in C++)
 # Returns a Python list containing the option value at every price step
-V = bs_solver.formulate_black_scholes(grid, market)
+V = black_scholes_solver.formulate_black_scholes(grid, market)
 ```
 
 ## References
