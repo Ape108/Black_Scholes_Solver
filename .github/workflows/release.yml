@@ -1,0 +1,32 @@
+name: Build and Release Wheels
+
+# This tells GitHub to only run this workflow when you publish a new Release
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Spin up a server for each major Operating System
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.17.0
+        env:
+          # Optional: Skip building for PyPy or obsolete 32-bit architectures to save time
+          CIBW_SKIP: "pp* *-win32 *-manylinux_i686"
+
+      - name: Upload Wheels to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          # This attaches the compiled .whl files to your published release
+          files: ./wheelhouse/*.whl

@@ -59,5 +59,11 @@ pybind11_add_module(bs_solver
     src/black_scholes.cpp
 )
 
+# Install the compiled C++ library 
+install(TARGETS bs_solver DESTINATION .)
+
+# Install the Python type hints stub file alongside it
+install(FILES src/bs_solver.pyi DESTINATION .)
+
 # Ensure the module can find your headers
 target_include_directories(bs_solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
