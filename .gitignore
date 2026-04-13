@@ -46,3 +46,4 @@ build_dir
 .venv
 
 __pycache__
+.pytest_cache
