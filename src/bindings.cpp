@@ -7,6 +7,12 @@ namespace py = pybind11;
 PYBIND11_MODULE(black_scholes_solver, m) {
     m.doc() = "C++ Black-Scholes Finite Difference Solver";
 
+    // Expose enum class
+    py::enum_<OptionType>(m, "OptionType")
+        .value("Call", OptionType::Call)
+        .value("Put", OptionType::Put)
+        .export_values();
+
     // Expose the GridParams Struct to python
     py::class_<GridParams>(m, "GridParams")
         .def(py::init<>()) // Allow instantiation in python: grid = black_scholes_solver.GridParams()
@@ -20,7 +26,8 @@ PYBIND11_MODULE(black_scholes_solver, m) {
         .def(py::init<>())
         .def_readwrite("volatility", &MarketParams::volatility)
         .def_readwrite("risk_free_interest", &MarketParams::risk_free_interest)
-        .def_readwrite("strike_price", &MarketParams::strike_price);
+        .def_readwrite("strike_price", &MarketParams::strike_price)
+        .def_readwrite("option_type", &MarketParams::option_type);
 
     // Bind core formulation function
     m.def("formulate_black_scholes", &formulate_black_scholes,

@@ -7,6 +7,12 @@
 #include <cmath>
 #include <iomanip>
 
+enum class OptionType
+{
+    Call,
+    Put
+};
+
 struct GridParams {
     double price_ceiling;
     double time_to_maturity;
@@ -19,6 +25,7 @@ struct MarketParams {
     double volatility;
     double risk_free_interest;
     double strike_price;
+    OptionType option_type;
 };
 
 struct Coefficients {

@@ -107,7 +107,11 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     std::vector<double> V(M + 1, 0.0);
     for (size_t i = 0; i <= M; ++i) {
         double S_i = i * delta_S;
-        V[i] = std::max(0.0, S_i - market.strike_price); // Assuming Call Option
+        if (market.option_type == OptionType::Call) {
+            V[i] = std::max(0.0, S_i - market.strike_price);
+        } else {
+            V[i] = std::max(0.0, market.strike_price - S_i);
+        }
     }
 
     // 5. Time-stepping loop (backward induction)
@@ -117,13 +121,23 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
         double t_j = j * delta_t;
         double t_j_plus_1 = (j + 1) * delta_t;
 
-        // Calculate Call Option boundaries for current and future step
-        double V_lower_j = 0.0;
-        double V_lower_j1 = 0.0;
+        // Calculate Boundaries for current and future step
+        double V_lower_j, V_lower_j1, V_upper_j, V_upper_j1;
 
-        double V_upper_j = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j));
-        double V_upper_j1 = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j_plus_1));
-
+        if (market.option_type == OptionType::Call) {
+            V_lower_j = 0.0;
+            V_lower_j1 = 0.0;
+            
+            V_upper_j = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j));
+            V_upper_j1 = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j_plus_1));
+        } else { // OptionType::Put
+            V_lower_j = market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j));
+            V_lower_j1 = market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j_plus_1));
+            
+            V_upper_j = 0.0;
+            V_upper_j1 = 0.0;
+        }
+        
         // Evaluate RHS
         std::vector<double> rhs = evaluate_rhs(V, alpha, beta, gamma, V_lower_j, V_lower_j1, V_upper_j, V_upper_j1);
 

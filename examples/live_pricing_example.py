@@ -65,6 +65,7 @@ def main():
     market.volatility = implied_vol
     market.risk_free_interest = risk_free_rate
     market.strike_price = strike_price
+    market.option_type = black_scholes_solver.OptionType.Call
 
     # 2. Call the C++ engine (Executes in compiled C++ speed)
     # pybind11 automatically converts the returned std::vector<float> into a Python list

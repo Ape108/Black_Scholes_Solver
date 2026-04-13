@@ -155,6 +155,7 @@ def run_benchmark():
     market.volatility = VOL
     market.risk_free_interest = RATE
     market.strike_price = STRIKE
+    market.option_type = black_scholes_solver.OptionType.Call
 
     cpp_start = time.perf_counter()
     for _ in range(ITERATIONS):
