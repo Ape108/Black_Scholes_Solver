@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import black_scholes_solver # My Compiled C++ Library 
 
 def main():
-    start_time = datetime.now()
 
     target_stock = "NVDA"
 
@@ -48,12 +47,7 @@ def main():
     print(f"S0 (Price): ${current_price:.2f} | K (Strike): ${strike_price} | T (Years): {T:.4f}")
     print(f"Vol (sigma): {implied_vol:.4f} | Risk-Free Rate (r): {risk_free_rate:.4f}\n")
 
-    end_time = datetime.now()
 
-    elapsed_time = end_time - start_time
-    print("Data extraction took", elapsed_time, "seconds.\n")
-
-    start_time = datetime.now()
     # 1. Instantiate the C++ structs directly in Python
     grid = black_scholes_solver.GridParams()
     grid.price_ceiling = strike_price * 2.0
@@ -83,10 +77,6 @@ def main():
     theoretical_price = (V[lower_idx] * weight_lower) + (V[upper_idx] * weight_upper)
 
     print(f"Theoretical C++ Price: ${theoretical_price:.4f}")
-
-    end_time = datetime.now()
-    elapsed_time = end_time - start_time
-    print("\nCalculation took", elapsed_time, "seconds.\n")
 
 if __name__ == "__main__":
     main()
