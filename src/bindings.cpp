@@ -27,10 +27,12 @@ PYBIND11_MODULE(black_scholes_solver, m) {
         .def_readwrite("volatility", &MarketParams::volatility)
         .def_readwrite("risk_free_interest", &MarketParams::risk_free_interest)
         .def_readwrite("strike_price", &MarketParams::strike_price)
-        .def_readwrite("option_type", &MarketParams::option_type);
+        .def_readwrite("option_type", &MarketParams::option_type)
+        .def_readwrite("dividend_yield", &MarketParams::dividend_yield);
 
     // Bind core formulation function
     m.def("formulate_black_scholes", &formulate_black_scholes,
           "Solves the Black-Scholes PDE using Crank-Nicolson",
-          py::arg("grid"), py::arg("market"));
+          py::arg("grid"), py::arg("market"),
+          py::call_guard<py::gil_scoped_release>()); // Unlocks multi-threading
 }

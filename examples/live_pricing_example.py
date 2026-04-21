@@ -27,6 +27,10 @@ def main():
     strike_price = round(target_call['strike'], 2)
     implied_vol = round(target_call['impliedVolatility'], 4)
 
+    div_yield = ticker.info.get('dividendYield', 0.0)
+    if div_yield is None:
+        div_yield = 0.0
+
     # Grab the bid and ask instead of the lastPrice
     bid = round(target_call['bid'], 4)
     ask = round(target_call['ask'], 4)
@@ -60,6 +64,7 @@ def main():
     market.risk_free_interest = risk_free_rate
     market.strike_price = strike_price
     market.option_type = black_scholes_solver.OptionType.Call
+    market.dividend_yield = div_yield
 
     # 2. Call the C++ engine (Executes in compiled C++ speed)
     # pybind11 automatically converts the returned std::vector<float> into a Python list

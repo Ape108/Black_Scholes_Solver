@@ -4,16 +4,18 @@
 Coefficients calculate_coeffs(
     const double& vol, 
     const double& r, 
+    const double& q,
     const double& time_to_maturity, 
     const size_t& time_steps, 
     const size_t& i
 ) {
     Coefficients coeffs;
     double delta_t = time_to_maturity / time_steps;
+    double drift = r - q;
 
-    coeffs.alpha = (delta_t / 4.0) * (std::pow(vol, 2.0) * std::pow(i, 2.0) - r * i);
+    coeffs.alpha = (delta_t / 4.0) * (std::pow(vol, 2.0) * std::pow(i, 2.0) - drift * i);
     coeffs.beta = (-delta_t / 2.0) * (std::pow(vol, 2.0) * std::pow(i, 2.0) + r);
-    coeffs.gamma = (delta_t / 4.0) * (std::pow(vol, 2.0) * std::pow(i, 2.0) + r * i);
+    coeffs.gamma = (delta_t / 4.0) * (std::pow(vol, 2.0) * std::pow(i, 2.0) + drift * i);
 
     return coeffs;
 }
@@ -82,7 +84,7 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     std::vector<double> gamma(M + 1, 0.0);
 
     for (size_t i = 0; i <= M; ++i) {
-        Coefficients c = calculate_coeffs(market.volatility, market.risk_free_interest, grid.time_to_maturity, N, i);
+        Coefficients c = calculate_coeffs(market.volatility, market.risk_free_interest, market.dividend_yield, grid.time_to_maturity, N, i);
         alpha[i] = c.alpha;
         beta[i] = c.beta;
         gamma[i] = c.gamma;
@@ -114,40 +116,37 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
         }
     }
 
-    // 5. Time-stepping loop (backward induction)
+    // 5. Time-stepping loop (backward induction for American Options)
     double delta_t = grid.time_to_maturity / N;
 
     for (int j = N - 1; j >= 0; --j) {
-        double t_j = j * delta_t;
-        double t_j_plus_1 = (j + 1) * delta_t;
-
-        // Calculate Boundaries for current and future step
+        // American Boundary Conditions (No exponential time-decay needed)
         double V_lower_j, V_lower_j1, V_upper_j, V_upper_j1;
 
         if (market.option_type == OptionType::Call) {
             V_lower_j = 0.0;
             V_lower_j1 = 0.0;
-            
-            V_upper_j = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j));
-            V_upper_j1 = grid.price_ceiling - market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j_plus_1));
+            V_upper_j = grid.price_ceiling - market.strike_price;
+            V_upper_j1 = grid.price_ceiling - market.strike_price;
         } else { // OptionType::Put
-            V_lower_j = market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j));
-            V_lower_j1 = market.strike_price * std::exp(-market.risk_free_interest * (grid.time_to_maturity - t_j_plus_1));
-            
+            V_lower_j = market.strike_price;
+            V_lower_j1 = market.strike_price;
             V_upper_j = 0.0;
             V_upper_j1 = 0.0;
         }
         
-        // Evaluate RHS
         std::vector<double> rhs = evaluate_rhs(V, alpha, beta, gamma, V_lower_j, V_lower_j1, V_upper_j, V_upper_j1);
-
-        // Solve the system using forward and backward substitution
         std::vector<double> y = forward_substitution(LU.lower, rhs);
         std::vector<double> x = backward_substitution(LU.upper, b_diag, y);
 
-        // Update V for the next iteration: Internal nodes become x, boundaries become deterministic equations
+        // ADD THE BRENNAN-SCHWARTZ CONSTRAINT
         for (size_t i = 1; i <= M - 1; ++i) {
-            V[i] = x[i - 1];
+            double S_i = i * delta_S;
+            double intrinsic_value = (market.option_type == OptionType::Call) 
+                                     ? std::max(0.0, S_i - market.strike_price) 
+                                     : std::max(0.0, market.strike_price - S_i);
+                                     
+            V[i] = std::max(x[i - 1], intrinsic_value); // Take the maximum!
         }
         V[0] = V_lower_j;
         V[M] = V_upper_j;

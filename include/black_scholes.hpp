@@ -26,6 +26,7 @@ struct MarketParams {
     double risk_free_interest;
     double strike_price;
     OptionType option_type;
+    double dividend_yield;
 };
 
 struct Coefficients {
@@ -38,6 +39,7 @@ struct Coefficients {
 Coefficients calculate_coeffs(
     const double& vol, 
     const double& r, 
+    const double& q,
     const double& time_to_maturity, 
     const size_t& time_steps, 
     const size_t& i

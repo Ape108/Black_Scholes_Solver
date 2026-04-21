@@ -16,6 +16,7 @@ class MarketParams:
     risk_free_interest: float
     strike_price: float
     option_type: OptionType
+    dividend_yield: float
     def __init__(self) -> None: ...
 
 def formulate_black_scholes(grid: GridParams, market: MarketParams) -> list[float]: ...
