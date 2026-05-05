@@ -20,3 +20,13 @@ class MarketParams:
     def __init__(self) -> None: ...
 
 def formulate_black_scholes(grid: GridParams, market: MarketParams) -> list[float]: ...
+
+def calculate_implied_volatility(
+    target_price: float, 
+    S: float, 
+    K: float, 
+    T: float, 
+    r: float, 
+    q: float, 
+    type: OptionType
+) -> float: ...
