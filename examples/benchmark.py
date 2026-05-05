@@ -3,9 +3,7 @@ import time
 
 import black_scholes_solver
 
-# =========================================================================
-# 1. PURE PYTHON IMPLEMENTATION (The Baseline)
-# =========================================================================
+# 1. PURE PYTHON IMPLEMENTATION 
 
 def lu_decomposition(a, b, c):
     n = len(a)
@@ -40,7 +38,7 @@ def backward_substitution(u, b, y):
     stack.reverse()
     return stack
 
-# UPDATED: Added 'q' (dividend yield) and generalized drift
+# Added 'q' (dividend yield) and generalized drift
 def calculate_coeffs(vol, r, q, time_to_maturity, time_steps, i):
     delta_t = time_to_maturity / time_steps
     drift = r - q
@@ -67,7 +65,7 @@ def evaluate_rhs(V_known, alpha, beta, gamma, V_lower_j, V_lower_j1, V_upper_j, 
     rhs[M - 2] += gamma[M - 1] * (V_upper_j + V_upper_j1)
     return rhs
 
-# UPDATED: Added 'q' and 'option_type'
+# Added 'q' and 'option_type'
 def naive_formulate_black_scholes(price_ceiling, time_to_maturity, num_price_steps, num_time_steps, vol, r, q, strike, option_type):
     M = num_price_steps
     N = num_time_steps
@@ -96,7 +94,7 @@ def naive_formulate_black_scholes(price_ceiling, time_to_maturity, num_price_ste
     delta_S = price_ceiling / M
     V = [0.0] * (M + 1)
     
-    # UPDATED: Terminal Payoff handles Calls and Puts
+    # Terminal Payoff handles Calls and Puts
     for i in range(M + 1):
         S_i = i * delta_S
         if option_type == 'Call':
@@ -107,7 +105,7 @@ def naive_formulate_black_scholes(price_ceiling, time_to_maturity, num_price_ste
     # Time-stepping loop (backward induction)
     for j in range(N - 1, -1, -1):
         
-        # UPDATED: American Boundary Conditions
+        # American Boundary Conditions
         if option_type == 'Call':
             V_lower_j = 0.0
             V_lower_j1 = 0.0
@@ -123,7 +121,7 @@ def naive_formulate_black_scholes(price_ceiling, time_to_maturity, num_price_ste
         y = forward_substitution(lower, rhs)
         x = backward_substitution(upper, b_diag, y)
 
-        # UPDATED: Brennan-Schwartz American Early Exercise Constraint
+        # Brennan-Schwartz American Early Exercise Constraint
         for i in range(1, M):
             S_i = i * delta_S
             if option_type == 'Call':
@@ -139,9 +137,7 @@ def naive_formulate_black_scholes(price_ceiling, time_to_maturity, num_price_ste
     return V
 
 
-# =========================================================================
 # 2. BENCHMARK RACE
-# =========================================================================
 
 def run_benchmark():
     # Set expensive grid parameters to stress-test both engines
