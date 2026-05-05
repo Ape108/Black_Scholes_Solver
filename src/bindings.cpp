@@ -35,4 +35,11 @@ PYBIND11_MODULE(black_scholes_solver, m) {
           "Solves the Black-Scholes PDE using Crank-Nicolson",
           py::arg("grid"), py::arg("market"),
           py::call_guard<py::gil_scoped_release>()); // Unlocks multi-threading
+
+    // Bind the implied volatility calculator
+    m.def("calculate_implied_volatility", &calculate_implied_volatility,
+          "Calculates Implied Volatility using Brent's Method",
+          py::arg("target_price"), py::arg("S"), py::arg("K"), 
+          py::arg("T"), py::arg("r"), py::arg("q"), py::arg("type"),
+          py::call_guard<py::gil_scoped_release>());
 }

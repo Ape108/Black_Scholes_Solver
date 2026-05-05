@@ -155,3 +155,103 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     return V; // This vector contains the present value of the option across all price steps.
 }
 
+double norm_cdf(const double& x) {
+    return 0.5 * std::erfc(-x * M_SQRT1_2);
+}
+
+// Closed-Form European Black-Scholes Pricer
+double european_price(const double &S, const double &K, const double &T, const double &r, const double &q, const double &sigma, const OptionType &type) {
+    if (sigma <= 0.0) return (type == OptionType::Call) ? std::max(0.0, S - K) : std::max(0.0, K - S);
+
+    double d1 = (std::log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * std::sqrt(T));
+    double d2 = d1 - sigma * std::sqrt(T);
+
+    if (type == OptionType::Call) {
+        return S * std::exp(-q * T) * norm_cdf(d1) - K * std::exp(-r * T) * norm_cdf(d2);
+    } else {
+        return K * std::exp(-r * T) * norm_cdf(-d2) - S * std::exp(-q * T) * norm_cdf(-d1);
+    }
+}
+
+double calculate_implied_volatility(const double &target_price, const double &S, const double &K, const double &T, const double &r, const double &q, const OptionType &type) {
+    // 1. Define the bracket [a, b]
+    double a = 1e-4; // Lower bound (0.01%)
+    double b = 5.0;  // Upper bound (500%)
+    
+    // Function to evaluate the error at a given volatility
+    auto eval_error = [&](double vol) {
+        return european_price(S, K, T, r, q, vol, type) - target_price;
+    };
+
+    double fa = eval_error(a);
+    double fb = eval_error(b);
+
+    // If the target price is completely outside our 500% volatility bounds
+    if (fa * fb > 0.0) {
+        throw std::runtime_error("Implied volatility root is not bracketed. Market price may be invalid or arbitrageable.");
+    }
+
+    // Brent's Method Setup
+    double c = a, fc = fa;
+    double d = b - a, e = d;
+    double tol = 1e-6; // Precision tolerance
+    int max_iter = 100;
+
+    for (int iter = 0; iter < max_iter; ++iter) {
+        if (std::abs(fc) < std::abs(fb)) {
+            a = b; b = c; c = a;
+            fa = fb; fb = fc; fc = fa;
+        }
+
+        double tol1 = 2.0 * 2.2204460492503131e-16 * std::abs(b) + 0.5 * tol; // Machine epsilon scaling
+        double xm = 0.5 * (c - b);
+
+        if (std::abs(xm) <= tol1 || fb == 0.0) {
+            return b; // Root found!
+        }
+
+        if (std::abs(e) >= tol1 && std::abs(fa) > std::abs(fb)) {
+            double s = fb / fa;
+            double p, q_val;
+            
+            if (a == c) {
+                // Secant Method
+                p = 2.0 * xm * s;
+                q_val = 1.0 - s;
+            } else {
+                // Inverse Quadratic Interpolation
+                q_val = fa / fc;
+                double r_val = fb / fc;
+                p = s * (2.0 * xm * q_val * (q_val - r_val) - (b - a) * (r_val - 1.0));
+                q_val = (q_val - 1.0) * (r_val - 1.0) * (s - 1.0);
+            }
+
+            if (p > 0.0) q_val = -q_val;
+            p = std::abs(p);
+
+            double min1 = 3.0 * xm * q_val - std::abs(tol1 * q_val);
+            double min2 = std::abs(e * q_val);
+
+            if (2.0 * p < (min1 < min2 ? min1 : min2)) {
+                e = d;
+                d = p / q_val; // Accept interpolation
+            } else {
+                d = xm; e = d; // Fallback to Bisection
+            }
+        } else {
+            d = xm; e = d; // Fallback to Bisection
+        }
+
+        a = b; fa = fb;
+        if (std::abs(d) > tol1) b += d;
+        else b += (xm > 0.0 ? tol1 : -tol1);
+
+        fb = eval_error(b);
+        if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
+            c = a; fc = fa;
+            e = d = b - a;
+        }
+    }
+
+    throw std::runtime_error("Brent's Method failed to converge within maximum iterations.");
+}

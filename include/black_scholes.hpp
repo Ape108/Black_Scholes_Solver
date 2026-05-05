@@ -54,3 +54,9 @@ std::vector<double> evaluate_rhs(
     double V_bound_upper_j, double V_bound_upper_j_plus_1);
 
 std::vector<double> formulate_black_scholes(const GridParams& grid, const MarketParams& market);
+
+double norm_cdf(const double& x);
+
+double european_price(const double &S, const double &K, const double &T, const double &r, const double &q, const double &sigma, const OptionType &type);
+
+double calculate_implied_volatility(const double &target_price, const double &S, const double &K, const double &T, const double &r, const double &q, const OptionType &type);
