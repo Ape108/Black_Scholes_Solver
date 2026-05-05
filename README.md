@@ -56,6 +56,8 @@ iv = black_scholes_solver.calculate_implied_volatility(
 print(f"Implied Volatility: {iv:.4f}")
 ```
 
+![volatility_smile.png]
+
 ## Performance
 
 The numerical engine is built to handle computationally intensive stochastic grid calculations with minimal latency. By bypassing the Python Global Interpreter Lock (GIL) and executing raw 64-bit C++ machine code, the library achieves a roughly **30x execution speedup** over native Python implementations.
@@ -63,6 +65,16 @@ The numerical engine is built to handle computationally intensive stochastic gri
 **Benchmark (2000 Price Steps x 2000 Time Steps):**
 * **Pure Python:** ~2.51 seconds
 * **Compiled C++:** ~0.08 seconds
+
+## Limitations & Mathematical Assumptions
+
+While this engine is built for microsecond execution and high-precision PDE solving, it currently relies on several standard quantitative assumptions that may introduce minor drift when compared to institutional pricing feeds (e.g., OptionMetrics, Bloomberg):
+
+* **European IV Approximation for American Options:** The `calculate_implied_volatility` root-finder utilizes Brent's Method over the closed-form European Black-Scholes equation. Because American options contain an early-exercise premium, using a European formula to extract IV from an American market price will slightly artificially inflate the resulting volatility. (Note: The PDE *does* properly price American options via the Brennan-Schwartz constraint, but the fast root-finder assumes European exercise).
+* **Continuous Dividend Yields:** The solver models dividends as a continuous annualized yield ($q$). It does not currently support discrete dividend schedules (lumpy cash flows on specific ex-dividend dates). For underlyings with massive, irregular dividends, this continuous approximation will cause slight pricing drift.
+* **Constant Interest Rates:** The `MarketParams` struct accepts a single, scalar constant for the risk-free rate ($r$). The engine does not natively support a full yield curve or term structure of interest rates. 
+* **Mid-Price Illiquidity:** The implied volatility pipeline is optimized to target the exact Bid-Ask Mid-Price. In highly illiquid options with blown-out spreads, the arithmetic midpoint may not represent the true market clearing price, which can cause Brent's Method to map an exaggerated volatility smirk.
+
 
 ## References
 
