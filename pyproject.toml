@@ -20,3 +20,10 @@ authors = [
 [tool.scikit-build]
 # This tells the build system we are using CMake and generating a wheel
 wheel.expand-macos-universal-tags = true
+
+[tool.pytest.ini_options]
+# Tell pytest where your actual tests live
+testpaths = ["tests"]
+
+# Tell pytest which folders to completely ignore
+norecursedirs = ["build_dir", ".venv", "build", "_deps"]
