@@ -56,7 +56,7 @@ iv = black_scholes_solver.calculate_implied_volatility(
 print(f"Implied Volatility: {iv:.4f}")
 ```
 
-![volatility_smile.png]
+![Volatility Smile](volatility_smile.png)
 
 ## Performance
 
