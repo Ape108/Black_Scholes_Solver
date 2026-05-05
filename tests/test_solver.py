@@ -37,3 +37,50 @@ def test_put_option_execution():
     assert len(V) == grid.num_price_steps + 1
     assert V[-1] == 0.0 # Put option is worthless at the ceiling (infinity)
     assert V[0] > 0.0   # Put option has maximum value when stock price is $0
+
+def test_implied_volatility_calculation():
+    # Known market conditions
+    S = 100.0
+    K = 100.0
+    T = 1.0
+    r = 0.05
+    q = 0.02
+    target_volatility = 0.25 # We expect it to find 25%
+    
+    # The mathematical European price for these exact parameters is roughly $10.027
+    target_price = 10.0271 
+    
+    calculated_iv = black_scholes_solver.calculate_implied_volatility(
+        target_price=target_price,
+        S=S,
+        K=K,
+        T=T,
+        r=r,
+        q=q,
+        type=black_scholes_solver.OptionType.Call
+    )
+    
+    # Assert that Brent's method found the 25% volatility to within 4 decimal places
+    assert abs(calculated_iv - target_volatility) < 1e-4
+
+def test_implied_volatility_put_option():
+    # Test that it works for puts as well
+    S = 50.0
+    K = 55.0
+    T = 0.5
+    r = 0.04
+    q = 0.0
+    
+    target_price = 5.8559 # Expected price for a Put at 30% vol
+    
+    calculated_iv = black_scholes_solver.calculate_implied_volatility(
+        target_price=target_price,
+        S=S,
+        K=K,
+        T=T,
+        r=r,
+        q=q,
+        type=black_scholes_solver.OptionType.Put
+    )
+    
+    assert abs(calculated_iv - 0.30) < 1e-4

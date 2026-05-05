@@ -38,6 +38,24 @@ market.option_type = black_scholes_solver.OptionType.Call
 V = black_scholes_solver.formulate_black_scholes(grid, market)
 ```
 
+### Calculating Implied Volatility
+The library also includes a high-speed root-finder using Brent's Method to calculate arbitrage-free implied volatility directly from market prices.
+
+```python
+import black_scholes_solver
+
+iv = black_scholes_solver.calculate_implied_volatility(
+    target_price=2.5450,
+    S=196.50,
+    K=197.50,
+    T=0.0081,
+    r=0.0360,
+    q=0.0,
+    type=black_scholes_solver.OptionType.Call
+)
+print(f"Implied Volatility: {iv:.4f}")
+```
+
 ## Performance
 
 The numerical engine is built to handle computationally intensive stochastic grid calculations with minimal latency. By bypassing the Python Global Interpreter Lock (GIL) and executing raw 64-bit C++ machine code, the library achieves a roughly **30x execution speedup** over native Python implementations.
