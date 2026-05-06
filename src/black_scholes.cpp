@@ -49,8 +49,7 @@ std::vector<double> evaluate_rhs(
     return rhs;
 }
 
-std::vector<double> formulate_black_scholes(const GridParams& grid, const MarketParams& market) {
-    
+void param_safety_check(const GridParams& grid, const MarketParams& market) {
     if (grid.num_price_steps == 0) {
         throw std::invalid_argument("formulate_black_scholes: num_price_steps must be greater than 0");
     }
@@ -74,7 +73,12 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     if (market.strike_price <= 0.0) {
         throw std::invalid_argument("formulate_black_scholes: strike_price must be positive");
     }
-    
+}
+
+std::vector<double> formulate_black_scholes(const GridParams& grid, const MarketParams& market) {
+
+    param_safety_check(grid, market); // Error Handling for Invalid parameters
+
     size_t M = grid.num_price_steps;
     size_t N = grid.num_time_steps;
 
@@ -106,14 +110,18 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
 
     // 4. Set up the terminal payoff at expiration (j = N)
     double delta_S = grid.price_ceiling / M;
-    std::vector<double> V(M + 1, 0.0);
+    std::vector<double> intrinsic_payoff(M + 1, 0.0);
+    std::vector<double> V(M + 1, 0.0); // The active grid
     for (size_t i = 0; i <= M; ++i) {
         double S_i = i * delta_S;
         if (market.option_type == OptionType::Call) {
-            V[i] = std::max(0.0, S_i - market.strike_price);
+            intrinsic_payoff[i] = std::max(0.0, S_i - market.strike_price);
         } else {
-            V[i] = std::max(0.0, market.strike_price - S_i);
+            intrinsic_payoff[i] = std::max(0.0, market.strike_price - S_i);
         }
+
+        // Seed the terminal payoff at expiration (j = N)
+        V[i] = intrinsic_payoff[i];
     }
 
     // 5. Time-stepping loop (backward induction for American Options)
@@ -141,12 +149,8 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
 
         // ADD THE BRENNAN-SCHWARTZ CONSTRAINT
         for (size_t i = 1; i <= M - 1; ++i) {
-            double S_i = i * delta_S;
-            double intrinsic_value = (market.option_type == OptionType::Call) 
-                                     ? std::max(0.0, S_i - market.strike_price) 
-                                     : std::max(0.0, market.strike_price - S_i);
-                                     
-            V[i] = std::max(x[i - 1], intrinsic_value); // Take the maximum!
+
+            V[i] = std::max(x[i - 1], intrinsic_payoff[i]);
         }
         V[0] = V_lower_j;
         V[M] = V_upper_j;

@@ -52,7 +52,10 @@ std::vector<double> evaluate_rhs(
     const std::vector<double>& beta,
     const std::vector<double>& gamma,
     double V_bound_lower_j, double V_bound_lower_j_plus_1,
-    double V_bound_upper_j, double V_bound_upper_j_plus_1);
+    double V_bound_upper_j, double V_bound_upper_j_plus_1
+);
+
+void param_safety_check(const GridParams &grid, const MarketParams &market);
 
 std::vector<double> formulate_black_scholes(const GridParams& grid, const MarketParams& market);
 
