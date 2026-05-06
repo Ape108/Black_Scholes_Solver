@@ -56,7 +56,6 @@ x will be the solution vector to the original tridiagonal linear system.
 #pragma once
 
 #include <vector>
-#include <stack>
 #include <stdexcept>
 #include <string>
 #include <cmath>
@@ -77,12 +76,12 @@ Decomposed lu_decomposition(const std::vector<double>& a, const std::vector<doub
 /// @brief Solves a system of linear equations using forward substitution.
 /// @param lower The lower triangular matrix (flattened into a 1D vector).
 /// @param b The right-hand side constant vector.
-/// @return A vector containing the solution to the system.
-std::vector<double> forward_substitution(const std::vector<double>& lower, const std::vector<double>& b);
+/// @param y A pre-allocated buffer where the resulting solution vector will be written.
+void forward_substitution(const std::vector<double>& lower, const std::vector<double>& b, std::vector<double>& y);
 
 /// @brief Solves a system of linear equations using backward substitution.
 /// @param u The main diagonal of the upper triangular matrix (flattened into a 1D vector).
 /// @param b The upper diagonal of the upper triangular matrix (flattened into a 1D vector).
 /// @param y The right-hand side constant vector.
-/// @return A vector containing the solution to the system.
-std::vector<double> backward_substitution(const std::vector<double>& u, const std::vector<double>& b, const std::vector<double>& y);
+/// @param x A pre-allocated buffer where the final solution vector will be written.
+void backward_substitution(const std::vector<double>& u, const std::vector<double>& b, const std::vector<double>& y, std::vector<double>& x);

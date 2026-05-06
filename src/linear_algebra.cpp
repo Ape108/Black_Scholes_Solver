@@ -30,58 +30,23 @@ Decomposed lu_decomposition(const std::vector<double>& a, const std::vector<doub
     return LU;
 }
 
-std::vector<double> forward_substitution(const std::vector<double>& lower, const std::vector<double>& b) {
+void forward_substitution(const std::vector<double>& lower, const std::vector<double>& b, std::vector<double>& y) {
     
-    if (b.empty()) {
-        throw std::invalid_argument("Forward substitution: RHS vector 'b' cannot be empty");
-    }
-    
-    std::vector<double> y;
-    y.push_back(b[0]);
     size_t n = lower.size();
-    
-    for (size_t i=1; i<=n; i++) {
-        double y_i = b[i] - (lower[i-1] * y[i-1]);
-        y.push_back(y_i);
-    }
+    y[0] = b[0];
 
-    return y;
+    for (size_t i=1; i<=n; i++) {
+        y[i] = b[i] - (lower[i-1] * y[i-1]);
+    }
 }
 
-std::vector<double> backward_substitution(const std::vector<double>& u, const std::vector<double>& b, const std::vector<double>& y) {
-
-    if (u.empty() || y.empty()) {
-        throw std::invalid_argument("Backward substitution: upper diagonal 'u' and RHS 'y' cannot be empty");
-    }
+void backward_substitution(const std::vector<double>& u, const std::vector<double>& b, const std::vector<double>& y, std::vector<double>& x) {
     
     size_t n = u.size();
-    
-    if (std::abs(u[n-1]) < 1e-15) {
-        throw std::runtime_error("Backward substitution: pivot element u[" + std::to_string(n-1) + "] is zero or near-zero");
-    }
-    
-    std::stack<double> x;
-    x.push(y[n-1] / u[n-1]);
-    
-    for (size_t i = n-1; i > 0; i--) {
-        
-        if (std::abs(u[i-1]) < 1e-15) {
-            throw std::runtime_error("Backward substitution: pivot element u[" + std::to_string(i-1) + "] is zero or near-zero");
-        }
-        
-        double x_i = y[i-1] - (b[i-1] * x.top());
-        x_i /= u[i-1];
-        x.push(x_i);
-    }
 
-    std::vector<double> solution;
+    x[n - 1] = y[n - 1] / u[n - 1];
 
-    // Pop all values from stack into the vector in correct order
-    while (!x.empty()) {
-        double top = x.top();
-        solution.push_back(top);
-        x.pop();
+    for (size_t i = n - 1; i > 0; --i) {
+        x[i - 1] = (y[i - 1] - (b[i - 1] * x[i])) / u[i - 1];
     }
-
-    return solution;
 }
