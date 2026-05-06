@@ -2,12 +2,12 @@
 #include "linear_algebra.hpp"
 
 Coefficients calculate_coeffs(
-    const double& vol, 
-    const double& r, 
-    const double& q,
-    const double& time_to_maturity, 
-    const size_t& time_steps, 
-    const size_t& i
+    double vol, 
+    double r, 
+    double q,
+    double time_to_maturity, 
+    size_t time_steps, 
+    size_t i
 ) {
     Coefficients coeffs;
     double delta_t = time_to_maturity / time_steps;
@@ -20,33 +20,32 @@ Coefficients calculate_coeffs(
     return coeffs;
 }
 
-std::vector<double> evaluate_rhs(
+void evaluate_rhs(
     const std::vector<double>& V_known, // Current known prices (size M + 1)
     const std::vector<double>& alpha,   // Pre-calculated coefficients
     const std::vector<double>& beta,
     const std::vector<double>& gamma,
     double V_bound_lower_j, double V_bound_lower_j_plus_1,
-    double V_bound_upper_j, double V_bound_upper_j_plus_1) 
+    double V_bound_upper_j, double V_bound_upper_j_plus_1,
+    std::vector<double>& rhs_buffer
+) 
 {
     size_t M = V_known.size() - 1; 
-    std::vector<double> rhs(M - 1, 0.0); // Matrix size is M-1
 
     // Loop through the internal grid nodes (i = 1 to M-1)
     for (size_t i = 1; i <= M - 1; ++i) {
         size_t rhs_idx = i - 1; // rhs is 0-indexed, grid is 1-indexed
 
-        rhs[rhs_idx] = (1.0 + beta[i]) * V_known[i];
+        rhs_buffer[rhs_idx] = (1.0 + beta[i]) * V_known[i];
         
         // Add adjacent internal nodes (avoiding boundary out-of-bounds)
-        if (i > 1)   rhs[rhs_idx] += alpha[i] * V_known[i - 1];
-        if (i < M-1) rhs[rhs_idx] += gamma[i] * V_known[i + 1];
+        if (i > 1)   rhs_buffer[rhs_idx] += alpha[i] * V_known[i - 1];
+        if (i < M-1) rhs_buffer[rhs_idx] += gamma[i] * V_known[i + 1];
     }
 
     // Add boundaries to the first and last rows of the RHS vector
-    rhs[0] += alpha[1] * (V_bound_lower_j + V_bound_lower_j_plus_1);
-    rhs[M - 2] += gamma[M - 1] * (V_bound_upper_j + V_bound_upper_j_plus_1);
-
-    return rhs;
+    rhs_buffer[0] += alpha[1] * (V_bound_lower_j + V_bound_lower_j_plus_1);
+    rhs_buffer[M - 2] += gamma[M - 1] * (V_bound_upper_j + V_bound_upper_j_plus_1);
 }
 
 void param_safety_check(const GridParams& grid, const MarketParams& market) {
@@ -127,6 +126,10 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     // 5. Time-stepping loop (backward induction for American Options)
     double delta_t = grid.time_to_maturity / N;
 
+    std::vector<double> rhs_buffer(M - 1, 0.0);
+    std::vector<double> y_buffer(M - 1, 0.0);
+    std::vector<double> x_buffer(M - 1, 0.0);
+
     for (int j = N - 1; j >= 0; --j) {
         // American Boundary Conditions (No exponential time-decay needed)
         double V_lower_j, V_lower_j1, V_upper_j, V_upper_j1;
@@ -143,14 +146,14 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
             V_upper_j1 = 0.0;
         }
         
-        std::vector<double> rhs = evaluate_rhs(V, alpha, beta, gamma, V_lower_j, V_lower_j1, V_upper_j, V_upper_j1);
-        std::vector<double> y = forward_substitution(LU.lower, rhs);
-        std::vector<double> x = backward_substitution(LU.upper, b_diag, y);
+        evaluate_rhs(V, alpha, beta, gamma, V_lower_j, V_lower_j1, V_upper_j, V_upper_j1, rhs_buffer);
+        forward_substitution(LU.lower, rhs_buffer, y_buffer);
+        backward_substitution(LU.upper, b_diag, y_buffer, x_buffer);
 
         // ADD THE BRENNAN-SCHWARTZ CONSTRAINT
         for (size_t i = 1; i <= M - 1; ++i) {
 
-            V[i] = std::max(x[i - 1], intrinsic_payoff[i]);
+            V[i] = std::max(x_buffer[i - 1], intrinsic_payoff[i]);
         }
         V[0] = V_lower_j;
         V[M] = V_upper_j;
@@ -159,12 +162,12 @@ std::vector<double> formulate_black_scholes(const GridParams& grid, const Market
     return V; // This vector contains the present value of the option across all price steps.
 }
 
-double norm_cdf(const double& x) {
+double norm_cdf(double x) {
     return 0.5 * std::erfc(-x * M_SQRT1_2);
 }
 
 // Closed-Form European Black-Scholes Pricer
-double european_price(const double &S, const double &K, const double &T, const double &r, const double &q, const double &sigma, const OptionType &type) {
+double european_price(double S, double K, double T, double r, double q, double sigma, OptionType type) {
     if (sigma <= 0.0) return (type == OptionType::Call) ? std::max(0.0, S - K) : std::max(0.0, K - S);
 
     double d1 = (std::log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * std::sqrt(T));
@@ -177,7 +180,7 @@ double european_price(const double &S, const double &K, const double &T, const d
     }
 }
 
-double calculate_implied_volatility(const double &target_price, const double &S, const double &K, const double &T, const double &r, const double &q, const OptionType &type) {
+double calculate_implied_volatility(double target_price, double S, double K, double T, double r, double q, OptionType type) {
     // 1. Define the bracket [a, b]
     double a = 1e-4; // Lower bound (0.01%)
     double b = 5.0;  // Upper bound (500%)

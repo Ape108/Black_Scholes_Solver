@@ -1,13 +1,12 @@
 #include "linear_algebra.hpp"
-
 #include <iostream>
 #include <gtest/gtest.h>
 
 TEST(ForwardSubTest, BasicAssertions) {
     std::vector<double> l = {2.0, 0.6};
     std::vector<double> b = {6.0, 9.0, 6.0};
-    std::vector<double> y = forward_substitution(l, b);
-
+    std::vector<double> y(b.size(), 0.0); // Pre-allocate buffer
+    forward_substitution(l, b, y);
 
     EXPECT_NEAR(y[0], 6.0, 1e-6);
     EXPECT_NEAR(y[1],-3.0, 1e-6);
@@ -18,7 +17,8 @@ TEST(ForwardSubTest, BasicAssertions) {
 TEST(ForwardSubTest, SingleElement) {
     std::vector<double> l = {};
     std::vector<double> b = {5.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 1);
     EXPECT_NEAR(y[0], 5.0, 1e-6);
@@ -28,7 +28,8 @@ TEST(ForwardSubTest, SingleElement) {
 TEST(ForwardSubTest, TwoElements) {
     std::vector<double> l = {2.0};
     std::vector<double> b = {4.0, 8.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 2);
     EXPECT_NEAR(y[0], 4.0, 1e-6);
@@ -39,7 +40,8 @@ TEST(ForwardSubTest, TwoElements) {
 TEST(ForwardSubTest, NegativeValues) {
     std::vector<double> l = {-1.0, 0.5};
     std::vector<double> b = {10.0, -5.0, 8.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 3);
     EXPECT_NEAR(y[0], 10.0, 1e-6);
@@ -52,7 +54,8 @@ TEST(ForwardSubTest, NegativeValues) {
 TEST(ForwardSubTest, FourElements) {
     std::vector<double> l = {1.0, 2.0, 3.0};
     std::vector<double> b = {5.0, 10.0, 15.0, 20.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 4);
     EXPECT_NEAR(y[0], 5.0, 1e-6);
@@ -65,7 +68,8 @@ TEST(ForwardSubTest, FourElements) {
 TEST(ForwardSubTest, ZerosInLower) {
     std::vector<double> l = {0.0, 0.0};
     std::vector<double> b = {3.0, 5.0, 7.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 3);
     EXPECT_NEAR(y[0], 3.0, 1e-6);
@@ -77,7 +81,8 @@ TEST(ForwardSubTest, ZerosInLower) {
 TEST(ForwardSubTest, FractionalValues) {
     std::vector<double> l = {0.5, 0.25};
     std::vector<double> b = {2.0, 1.0, 0.5};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 3);
     EXPECT_NEAR(y[0], 2.0, 1e-6);
@@ -89,7 +94,8 @@ TEST(ForwardSubTest, FractionalValues) {
 TEST(ForwardSubTest, LargeCoefficients) {
     std::vector<double> l = {10.0, 5.0};
     std::vector<double> b = {100.0, 200.0, 150.0};
-    std::vector<double> y = forward_substitution(l, b);
+    std::vector<double> y(b.size(), 0.0);
+    forward_substitution(l, b, y);
 
     EXPECT_EQ(y.size(), 3);
     EXPECT_NEAR(y[0], 100.0, 1e-5);
