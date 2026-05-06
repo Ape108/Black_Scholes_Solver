@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "black_scholes_solver"
-version = "0.4.0"
+version = "0.5.0"
 description = "A high-performance Black-Scholes PDE solver using Crank-Nicolson"
 readme = "README.md"
 requires-python = ">=3.8"
