@@ -20,6 +20,14 @@ enable_testing()
 add_library(solver_lib src/linear_algebra.cpp src/black_scholes.cpp)
 target_include_directories(solver_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Enable AVX-512 and Fast-Math
+    target_compile_options(solver_lib PRIVATE -mavx512f -mavx512dq -O3 -ffast-math)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # Windows/MSVC equivalent
+    target_compile_options(solver_lib PRIVATE /arch:AVX512 /O2 /fp:fast)
+endif()
+
 
 # Create a single unified test executable with all test files
 add_executable(

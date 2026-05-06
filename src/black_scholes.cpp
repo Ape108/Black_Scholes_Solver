@@ -21,8 +21,8 @@ Coefficients calculate_coeffs(
 }
 
 void evaluate_rhs(
-    const std::vector<double>& V_known, // Current known prices (size M + 1)
-    const std::vector<double>& alpha,   // Pre-calculated coefficients
+    const std::vector<double>& V_known,
+    const std::vector<double>& alpha,   
     const std::vector<double>& beta,
     const std::vector<double>& gamma,
     double V_bound_lower_j, double V_bound_lower_j_plus_1,
@@ -31,19 +31,29 @@ void evaluate_rhs(
 ) 
 {
     size_t M = V_known.size() - 1; 
+    if (M < 2) return; // Safety check
 
-    // Loop through the internal grid nodes (i = 1 to M-1)
-    for (size_t i = 1; i <= M - 1; ++i) {
-        size_t rhs_idx = i - 1; // rhs is 0-indexed, grid is 1-indexed
+    // Peel the First Node (i = 1)
+    rhs_buffer[0] = (1.0 + beta[1]) * V_known[1];
+    if (M > 2) rhs_buffer[0] += gamma[1] * V_known[2];
 
-        rhs_buffer[rhs_idx] = (1.0 + beta[i]) * V_known[i];
-        
-        // Add adjacent internal nodes (avoiding boundary out-of-bounds)
-        if (i > 1)   rhs_buffer[rhs_idx] += alpha[i] * V_known[i - 1];
-        if (i < M-1) rhs_buffer[rhs_idx] += gamma[i] * V_known[i + 1];
+    // The AVX-512 Vectorizable Core (i = 2 to M - 2)
+    // We use compiler pragmas to explicitly guarantee there are no memory overlaps
+    #pragma GCC ivdep
+    #pragma clang loop vectorize(enable)
+    for (size_t i = 2; i < M - 1; ++i) {
+        rhs_buffer[i - 1] = alpha[i] * V_known[i - 1] + 
+                            (1.0 + beta[i]) * V_known[i] + 
+                            gamma[i] * V_known[i + 1];
     }
 
-    // Add boundaries to the first and last rows of the RHS vector
+    // Peel the Last Node (i = M - 1)
+    if (M > 2) {
+        rhs_buffer[M - 2] = alpha[M - 1] * V_known[M - 2] + 
+                            (1.0 + beta[M - 1]) * V_known[M - 1];
+    }
+
+    // Add boundaries to the first and last rows
     rhs_buffer[0] += alpha[1] * (V_bound_lower_j + V_bound_lower_j_plus_1);
     rhs_buffer[M - 2] += gamma[M - 1] * (V_bound_upper_j + V_bound_upper_j_plus_1);
 }
