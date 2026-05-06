@@ -20,12 +20,26 @@ enable_testing()
 add_library(solver_lib src/linear_algebra.cpp src/black_scholes.cpp)
 target_include_directories(solver_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
+# 1. Apply base optimizations (Universally supported by ARM and x86)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    # Enable AVX-512 and Fast-Math
-    target_compile_options(solver_lib PRIVATE -mavx512f -mavx512dq -O3 -ffast-math)
+    target_compile_options(solver_lib PRIVATE -O3 -ffast-math)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # Windows/MSVC equivalent
-    target_compile_options(solver_lib PRIVATE /arch:AVX512 /O2 /fp:fast)
+    target_compile_options(solver_lib PRIVATE /O2 /fp:fast)
+endif()
+
+# 2. Determine target architecture (accounting for macOS cross-compilation)
+set(TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+if(APPLE AND CMAKE_OSX_ARCHITECTURES)
+    set(TARGET_ARCH ${CMAKE_OSX_ARCHITECTURES})
+endif()
+
+# 3. Apply AVX2/FMA ONLY if compiling for x86_64 / AMD64 processors
+if(TARGET_ARCH MATCHES "x86_64|AMD64|amd64")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(solver_lib PRIVATE -mavx2 -mfma)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_compile_options(solver_lib PRIVATE /arch:AVX2)
+    endif()
 endif()
 
 
